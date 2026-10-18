@@ -8,7 +8,7 @@
 [![Post-Quantum Crypto](https://img.shields.io/badge/Security-zERT%20%2B%20ML--DSA%20(Dilithium)-ff334b.svg)]()
 
 > **Datathon Track:** Real-Time AI for Critical Decisions  
-> **Repository:** [sahithyapopuriofficial-bit/Biopulse-Z](https://github.com/sahithyapopuriofficial-bit/Biopulse-Z)
+> **Repository:** [sahithyapopuriofficial-bit/biopulse-Z](https://github.com/sahithyapopuriofficial-bit/biopulse-Z)
 
 ---
 
@@ -21,8 +21,7 @@ ICU monitoring suffers from alarm fatigue and cloud latency; delayed shock detec
 ---
 
 ## 🏛 System Architecture
-<img width="556" height="1184" alt="IBM Z drawio" src="https://github.com/user-attachments/assets/d4cfca25-149a-428a-8718-8d390034a0f1" />
-
+<img width="556" height="1184" alt="IBM Z drawio" src="https://github.com/user-attachments/assets/3100cbe8-835b-4c2c-bb54-2f7848ee6b4e" />
 
 ---
 
