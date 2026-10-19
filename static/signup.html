@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioPulse-Z | Clinician Credential Registration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #060b11;
+      --bg-card: #0d1520;
+      --border-card: #182333;
+      --blue-accent: #0f62fe;
+      --blue-hover: #0353e9;
+      --text-main: #f1f5f9;
+      --text-muted: #64748b;
+      --crit-red: #ef4444;
+      --stable-green: #10b981;
+      --font-sans: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .signup-container {
+      width: 100%;
+      max-width: 780px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 36px 44px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
+    }
+
+    .signup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border-card);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+
+    .brand-badge {
+      background: var(--blue-accent);
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    .signup-header h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 8px;
+    }
+
+    .signup-header p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .input-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-main);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-field, .select-field {
+      background: #080e16;
+      border: 1px solid var(--border-card);
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      transition: all 0.15s;
+    }
+
+    .input-field:focus, .select-field:focus {
+      outline: none;
+      border-color: var(--blue-accent);
+      box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.2);
+    }
+
+    .select-field option {
+      background: #080e16;
+      color: #fff;
+    }
+
+    .compliance-box {
+      background: #060b11;
+      border: 1px solid #142030;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin: 10px 0 20px;
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--blue-accent);
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s;
+    }
+
+    .btn-submit:hover {
+      background: var(--blue-hover);
+    }
+
+    .form-footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .form-footer a {
+      color: #38bdf8;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .error-msg {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--crit-red);
+      color: #fca5a5;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .success-msg {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--stable-green);
+      color: #6ee7b7;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 20px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="signup-container">
+    <div class="signup-header">
+      <div>
+        <span class="brand-badge">BP-Z ENCLAVE</span>
+        <h2>Clinician Directory Registration</h2>
+        <p>Enroll institutional credentials into the IBM z16 Immutable Trust Registry</p>
+      </div>
+      <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-align: right;">
+        POLICY: <span style="color: var(--stable-green);">FDA 21 CFR § 11</span><br>
+        AUDIT: <span style="color: #38bdf8;">LATTICE ML-DSA</span>
+      </div>
+    </div>
+
+    <div class="error-msg" id="signup-error"></div>
+    <div class="success-msg" id="signup-success"></div>
+
+    <form id="signup-form">
+      <div class="grid-2col">
+        <div class="input-group">
+          <label class="input-label" for="reg-name">Full Legal Name & Suffix</label>
+          <input type="text" id="reg-name" class="input-field" placeholder="e.g. Dr. Marcus Vance, MD" required>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label" for="reg-npi">National Provider Identifier (NPI)</label>
+          <input type="text" id="reg-npi" class="input-field" placeholder="10-digit NPI License ID" required>
+        </div>
+      </div>
+
+      <div class="grid-2col">
+        <div class="input-group">
+          <label class="input-label" for="reg-email">Institutional Clinical Email</label>
+          <input type="email" id="reg-email" class="input-field" placeholder="marcus.vance@biopulse.ibm.com" required>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label" for="reg-password">Access Passkey / Password</label>
+          <input type="password" id="reg-password" class="input-field" placeholder="Minimum 8 characters" required minlength="8">
+        </div>
+      </div>
+
+      <div class="grid-2col">
+        <div class="input-group">
+          <label class="input-label" for="reg-dept">Clinical Department</label>
+          <select id="reg-dept" class="select-field" required>
+            <option value="Critical Care / Trauma ICU">Critical Care / Trauma ICU</option>
+            <option value="Cardiothoracic ICU (CTICU)">Cardiothoracic ICU (CTICU)</option>
+            <option value="Emergency Rapid Response">Emergency Rapid Response</option>
+            <option value="Neurocritical Care">Neurocritical Care</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label" for="reg-role">Clinical Authorization Level</label>
+          <select id="reg-role" class="select-field" required>
+            <option value="Attending Intensivist">Attending Intensivist</option>
+            <option value="Critical Care Fellow">Critical Care Fellow</option>
+            <option value="Charge Nurse / Triage Coordinator">Charge Nurse / Triage Coordinator</option>
+            <option value="Chief Medical Officer">Chief Medical Officer</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="compliance-box">
+        <strong>Attestation Notice:</strong> By registering, you confirm your institutional medical credentials are active. All subsequent counterfactual titration simulations, SBAR reviews, and Code Sepsis orders will be dual-signed with post-quantum lattice cryptography (ML-DSA) and immutably attributed to your NPI license.
+      </div>
+
+      <button type="submit" class="btn-submit" id="btn-signup">
+        <span>Complete Registration & Issue Enclave Token</span> &rarr;
+      </button>
+    </form>
+
+    <div class="form-footer">
+      Already registered in hospital registry? <a href="/login">Return to Physician Authorization</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('signup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('signup-error');
+      const successEl = document.getElementById('signup-success');
+      const btn = document.getElementById('btn-signup');
+
+      errorEl.style.display = "none";
+      successEl.style.display = "none";
+      btn.textContent = "Committing to Db2 Trust Registry...";
+
+      const payload = {
+        full_name: document.getElementById('reg-name').value.trim(),
+        npi_license: document.getElementById('reg-npi').value.trim(),
+        email: document.getElementById('reg-email').value.trim(),
+        password: document.getElementById('reg-password').value,
+        department: document.getElementById('reg-dept').value,
+        role: document.getElementById('reg-role').value
+      };
+
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.status === "SUCCESS") {
+          successEl.textContent = "Registration committed to IBM z16 trust ledger. Forwarding to authorization portal...";
+          successEl.style.display = "block";
+          setTimeout(() => {
+            window.location.href = "/login";
+          }, 1200);
+        } else {
+          errorEl.textContent = data.message || "Failed to commit credential registration.";
+          errorEl.style.display = "block";
+          btn.innerHTML = "Complete Registration & Issue Enclave Token &rarr;";
+        }
+      } catch (err) {
+        errorEl.textContent = "Gateway communication error with mainframe registry.";
+        errorEl.style.display = "block";
+        btn.innerHTML = "Complete Registration & Issue Enclave Token &rarr;";
+      }
+    });
+  </script>
+</body>
+</html>

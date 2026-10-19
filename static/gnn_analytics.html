@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioPulse-Z | Spatio-Temporal GNN Topological Analytics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #060b11;
+      --bg-sidebar: #091018;
+      --bg-card: #0d1520;
+      --border-card: #182333;
+      --text-main: #f1f5f9;
+      --text-muted: #64748b;
+      --text-sub: #94a3b8;
+      --blue-accent: #0f62fe;
+      --crit-red: #ef4444;
+      --crit-bg: rgba(239, 68, 68, 0.12);
+      --crit-border: rgba(239, 68, 68, 0.35);
+      --watch-yellow: #f59e0b;
+      --watch-bg: rgba(245, 158, 11, 0.12);
+      --watch-border: rgba(245, 158, 11, 0.35);
+      --stable-green: #10b981;
+      --stable-bg: rgba(16, 185, 129, 0.12);
+      --stable-border: rgba(16, 185, 129, 0.35);
+      --purple-accent: #8b5cf6;
+      --font-sans: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg-canvas); color: var(--text-main); font-family: var(--font-sans); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* TOP HEADER */
+    .top-header { height: 64px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-card); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 50; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .brand-badge { background: var(--blue-accent); color: #fff; font-weight: 800; font-size: 13px; padding: 6px 10px; border-radius: 6px; }
+    .brand-text h1 { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; }
+    .brand-text span { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+    .header-center { display: flex; align-items: center; gap: 20px; padding-left: 20px; border-left: 1px solid #162232; }
+    .view-pills { display: flex; background: #0b1420; padding: 4px; border-radius: 8px; border: 1px solid var(--border-card); gap: 4px; }
+    .view-pill { background: transparent; border: none; color: var(--text-sub); font-size: 12px; font-weight: 600; padding: 6px 16px; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; }
+    .view-pill.active { background: var(--blue-accent); color: #ffffff; }
+    .header-right { display: flex; align-items: center; gap: 16px; font-family: var(--font-mono); font-size: 12px; }
+    .live-clock-tag { color: var(--text-muted); padding: 4px 10px; background: #09111c; border: 1px solid #142030; border-radius: 4px; }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #1e293b; border: 1px solid var(--border-card); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+    /* LAYOUT */
+    .app-body { flex: 1; display: flex; }
+    .left-sidebar { width: 220px; background: var(--bg-sidebar); border-right: 1px solid var(--border-card); display: flex; flex-direction: column; justify-content: space-between; padding: 16px 12px; flex-shrink: 0; }
+    .nav-list { display: flex; flex-direction: column; gap: 4px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 6px; color: var(--text-sub); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .nav-item:hover { background: #0e1724; color: #fff; }
+    .nav-item.active { background: var(--blue-accent); color: #fff; }
+    .sidebar-footer { padding: 12px; border-top: 1px solid var(--border-card); }
+    .ibm-logo-text { font-size: 20px; font-weight: 900; letter-spacing: 0.15em; color: #fff; }
+
+    /* GNN ANALYTICS MAIN */
+    .content-area { flex: 1; padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+    .page-title-row { display: flex; justify-content: space-between; align-items: center; }
+    .page-title-row h2 { font-size: 20px; font-weight: 800; color: #fff; }
+    .page-title-row span { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+
+    /* METRIC BANNER */
+    .gnn-metrics-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .gnn-stat-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px 16px; }
+    .gnn-stat-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+    .gnn-stat-val { font-family: var(--font-mono); font-size: 22px; font-weight: 800; margin-top: 4px; }
+
+    /* 2-COLUMN MAIN STAGE */
+    .gnn-main-split { display: grid; grid-template-columns: 1.6fr 1.1fr; gap: 16px; }
+    .panel-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #142030; padding-bottom: 10px; }
+    .panel-head h3 { font-size: 13px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px; }
+
+    /* INTERACTIVE CANVAS CONTAINER */
+    .canvas-wrapper { position: relative; width: 100%; height: 380px; background: #03060a; border: 1px solid #141e2b; border-radius: 8px; overflow: hidden; }
+    #gnn-hypergraph-canvas { width: 100%; height: 100%; display: block; }
+    .canvas-legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); padding: 4px 6px; }
+
+    /* POD STRAIN HEATMAP CARDS */
+    .pod-grid-container { display: flex; flex-direction: column; gap: 10px; }
+    .pod-card { background: #070d14; border: 1px solid #182536; border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .pod-top { display: flex; justify-content: space-between; align-items: center; }
+    .pod-name { font-weight: 700; font-size: 13px; color: #fff; }
+    .pod-rn { font-size: 11px; color: var(--text-muted); }
+    .pod-progress-track { height: 6px; background: #141f2e; border-radius: 3px; overflow: hidden; }
+    .pod-progress-fill { height: 100%; transition: width 0.3s; }
+
+    /* NODE INSPECTOR CARD */
+    .node-inspector-box { background: #060b11; border: 1px solid #1a2738; border-radius: 6px; padding: 12px 14px; font-size: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .node-insp-head { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-weight: 700; color: #38bdf8; }
+
+    /* MATHEMATICAL FORMULATION CARD */
+    .math-card { background: #060a10; border: 1px dashed #1e293b; border-radius: 6px; padding: 12px 14px; font-family: var(--font-mono); font-size: 11px; color: #94a3b8; line-height: 1.5; }
+    .math-card strong { color: #fff; }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header class="top-header">
+    <div class="header-left">
+      <div class="brand-badge">BP</div>
+      <div class="brand-text">
+        <h1>BioPulse-Z</h1>
+        <span>v4.2.0</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="view-pills">
+        <a href="/dashboard" class="view-pill">Dashboard</a>
+        <a href="/unit-overview" class="view-pill">Unit Overview</a>
+        <a href="/intervention" class="view-pill">Clinical Intervention</a>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="sys-badge">
+        <span>IBM z16 / LinuxONE</span>
+        <span>•</span>
+        <span style="color: #38bdf8;">Powered by Telum AI</span>
+      </div>
+      <span class="live-clock-tag" id="live-clock">18 Oct 2026 • --:--:--</span>
+      <div class="user-avatar" id="header-avatar" title="Click to log out">SC</div>
+    </div>
+  </header>
+
+  <!-- APP BODY -->
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <aside class="left-sidebar">
+      <div class="nav-list">
+        <a href="/dashboard" class="nav-item"><span>📊</span> Dashboard</a>
+        <a href="/unit-overview" class="nav-item"><span>🖥️</span> Unit Overview</a>
+        <a href="/intervention" class="nav-item"><span>🩺</span> Clinical Intervention</a>
+        <a href="/alerts" class="nav-item"><span>🔔</span> Alerts & Actions</a>
+        <a href="/gnn-analytics" class="nav-item active"><span>🕸️</span> GNN Analytics</a>
+        <a href="/reports" class="nav-item"><span>📑</span> Reports</a>
+        <a href="/settings" class="nav-item"><span>⚙️</span> Settings</a>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="ibm-logo-text">IBM</div>
+        <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Built for a healthier planet</div>
+      </div>
+    </aside>
+
+    <!-- MAIN GNN ANALYTICS STAGE -->
+    <main class="content-area">
+      <div class="page-title-row">
+        <div>
+          <h2>Spatio-Temporal GNN & ICU Topology Analytics</h2>
+          <span>IBM Telum On-Chip 32MB Private L2 Cache Ring • 2-Hop Graph Message Passing</span>
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 11px; color: #a78bfa;">
+          TOPOLOGY ENGINE: G(V, E, W) ACTIVE
+        </div>
+      </div>
+
+      <!-- KPI Summary Banner -->
+      <div class="gnn-metrics-strip">
+        <div class="gnn-stat-card">
+          <div class="gnn-stat-lbl">Graph Message Passing Latency</div>
+          <div class="gnn-stat-val" style="color: #a78bfa;" id="gnn-lat-val">0.48 ms</div>
+        </div>
+        <div class="gnn-stat-card">
+          <div class="gnn-stat-lbl">Systemic Ward Cascade Index</div>
+          <div class="gnn-stat-val" style="color: var(--watch-yellow);" id="sys-cascade-val">28.4%</div>
+        </div>
+        <div class="gnn-stat-card">
+          <div class="gnn-stat-lbl">Active Inter-Bed Stress Edges</div>
+          <div class="gnn-stat-val" style="color: var(--crit-red);" id="active-edges-val">4 Edges</div>
+        </div>
+        <div class="gnn-stat-card">
+          <div class="gnn-stat-lbl">Coprocessor Cache Bypass Penalty</div>
+          <div class="gnn-stat-val" style="color: var(--stable-green);">0.0 ns (Direct Ring)</div>
+        </div>
+      </div>
+
+      <!-- Two-Column Main Stage -->
+      <div class="gnn-main-split">
+        
+        <!-- Left: Interactive Canvas -->
+        <div class="panel-box">
+          <div class="panel-head">
+            <h3><span>🕸️</span> ICU Floor Dynamic Hypergraph</h3>
+            <span style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">Click any bed node to inspect</span>
+          </div>
+
+          <div class="canvas-wrapper">
+            <canvas id="gnn-hypergraph-canvas" width="680" height="380"></canvas>
+          </div>
+
+          <div class="canvas-legend">
+            <span>● Green: Compensated</span>
+            <span>● Amber: Guarded</span>
+            <span>● Red: Critical Decompensation</span>
+            <span style="color: var(--crit-red);">━ Active Resource Starvation</span>
+          </div>
+        </div>
+
+        <!-- Right: Pod Heatmaps & Node Inspector -->
+        <div class="panel-box">
+          <div class="panel-head">
+            <h3><span>🔥</span> Nurse Cognitive Saturation</h3>
+            <span style="font-size: 10px; color: #38bdf8; font-family: var(--font-mono);">Staff Burnout Defense</span>
+          </div>
+
+          <div class="pod-grid-container" id="pod-cards-list">
+            <!-- Pod Alpha -->
+            <div class="pod-card">
+              <div class="pod-top">
+                <div>
+                  <span class="pod-name">Pod Alpha (Beds 01–04)</span>
+                  <div class="pod-rn">Sarah Chen, RN (Attending Primary)</div>
+                </div>
+                <strong style="color: #ef4444; font-family: var(--font-mono);" id="alpha-pct-val">88.0%</strong>
+              </div>
+              <div class="pod-progress-track">
+                <div class="pod-progress-fill" id="alpha-bar-fill" style="width: 88%; background: #ef4444;"></div>
+              </div>
+              <div style="font-size: 10px; color: #fca5a5;">Critical Attention Drain: Bed-04 septic shock requires 85% of bedside monitoring capacity.</div>
+            </div>
+
+            <!-- Pod Beta -->
+            <div class="pod-card">
+              <div class="pod-top">
+                <div>
+                  <span class="pod-name">Pod Beta (Beds 05–08)</span>
+                  <div class="pod-rn">Marcus Vance, RN</div>
+                </div>
+                <strong style="color: #10b981; font-family: var(--font-mono);" id="beta-pct-val">42.5%</strong>
+              </div>
+              <div class="pod-progress-track">
+                <div class="pod-progress-fill" id="beta-bar-fill" style="width: 42.5%; background: #10b981;"></div>
+              </div>
+              <div style="font-size: 10px; color: var(--text-muted);">Surveillance Nominal: Capacity available to absorb overflow surveillance.</div>
+            </div>
+
+            <!-- Pod Gamma -->
+            <div class="pod-card">
+              <div class="pod-top">
+                <div>
+                  <span class="pod-name">Pod Gamma (Beds 09–12)</span>
+                  <div class="pod-rn">Priya Patel, RN</div>
+                </div>
+                <strong style="color: #f59e0b; font-family: var(--font-mono);" id="gamma-pct-val">68.2%</strong>
+              </div>
+              <div class="pod-progress-track">
+                <div class="pod-progress-fill" id="gamma-bar-fill" style="width: 68.2%; background: #f59e0b;"></div>
+              </div>
+              <div style="font-size: 10px; color: #fde68a;">Elevated Strain: Bed-11 tachycardia surge requires active surveillance.</div>
+            </div>
+          </div>
+
+          <!-- Dynamic Node Inspector -->
+          <div class="node-inspector-box" id="node-inspector">
+            <div class="node-insp-head">
+              <span id="insp-bed-id">BED-04 (Selected Node)</span>
+              <span style="color: var(--crit-red);" id="insp-status">CRITICAL ACUITY</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-family: var(--font-mono); font-size: 11px;">
+              <div>HR: <strong id="insp-hr" style="color: #ef4444;">118</strong></div>
+              <div>MAP: <strong id="insp-map" style="color: #ef4444;">54</strong></div>
+              <div>Shock Index: <strong id="insp-si" style="color: #ef4444;">1.34</strong></div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-sub);">
+              GNN Cascade Propagation: <strong style="color: #a78bfa;" id="insp-cascade">89.4% probability of neighbor starvation</strong>.
+            </div>
+          </div>
+
+          <!-- Mathematical Formulation -->
+          <div class="math-card">
+            <strong>In-Transaction Message Passing Formulation:</strong><br>
+            H<sup>(l+1)</sup> = &sigma;( D&#771;<sup>-&frac12;</sup> A&#771; D&#771;<sup>-&frac12;</sup> H<sup>(l)</sup> W )<br>
+            <span>Direct Telum matrix engine execution via 32MB L2 private cache. Zero memory stalls across irregular graph traversals.</span>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('biopulse_token')) {
+      window.location.href = "/login";
+    }
+
+    const cohort = new Map();
+    let selectedNodeId = "BED-04";
+
+    function updateClock() {
+      const el = document.getElementById('live-clock');
+      if (el) el.textContent = `18 Oct 2026 • ${new Date().toTimeString().slice(0, 8)}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Node Positions for 12 Beds in 3 Pods
+    const nodeCoords = {
+      "BED-01": { x: 75,  y: 75,  pod: "Alpha" },
+      "BED-02": { x: 155, y: 75,  pod: "Alpha" },
+      "BED-03": { x: 75,  y: 160, pod: "Alpha" },
+      "BED-04": { x: 155, y: 160, pod: "Alpha" },
+
+      "BED-05": { x: 285, y: 75,  pod: "Beta" },
+      "BED-06": { x: 365, y: 75,  pod: "Beta" },
+      "BED-07": { x: 285, y: 160, pod: "Beta" },
+      "BED-08": { x: 365, y: 160, pod: "Beta" },
+
+      "BED-09": { x: 495, y: 75,  pod: "Gamma" },
+      "BED-10": { x: 575, y: 75,  pod: "Gamma" },
+      "BED-11": { x: 495, y: 160, pod: "Gamma" },
+      "BED-12": { x: 575, y: 160, pod: "Gamma" }
+    };
+
+    const canvas = document.getElementById('gnn-hypergraph-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Click Detection on Nodes
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clickX = (e.clientX - rect.left) * scaleX;
+      const clickY = (e.clientY - rect.top) * scaleY;
+
+      for (const [bedId, pt] of Object.entries(nodeCoords)) {
+        const dist = Math.hypot(clickX - pt.x, clickY - pt.y);
+        if (dist <= 16) {
+          selectedNodeId = bedId;
+          updateNodeInspector(bedId);
+          renderHypergraph();
+          break;
+        }
+      }
+    });
+
+    function updateNodeInspector(bedId) {
+      const p = cohort.get(bedId) || { vitals: { hr: 72, sbp: 120, dbp: 80 }, risk_state: 'stable' };
+      const mapVal = Math.round((p.vitals.sbp + 2 * (p.vitals.dbp || 60)) / 3);
+      const siVal = (p.vitals.hr / Math.max(p.vitals.sbp, 1)).toFixed(2);
+
+      document.getElementById('insp-bed-id').textContent = `${bedId} (Selected Node)`;
+      const statusEl = document.getElementById('insp-status');
+      statusEl.textContent = p.risk_state.toUpperCase() + (p.risk_state === 'critical' ? ' ACUITY' : ' STATUS');
+      statusEl.style.color = p.risk_state === 'critical' ? 'var(--crit-red)' : (p.risk_state === 'watch' ? 'var(--watch-yellow)' : 'var(--stable-green)');
+
+      document.getElementById('insp-hr').textContent = p.vitals.hr;
+      document.getElementById('insp-map').textContent = mapVal;
+      document.getElementById('insp-si').textContent = siVal;
+      
+      const cascadeScore = bedId === "BED-04" ? "89.4%" : (bedId === "BED-08" ? "78.2%" : (bedId === "BED-11" ? "64.1%" : "12.8%"));
+      document.getElementById('insp-cascade').textContent = `${cascadeScore} probability of neighbor starvation`;
+    }
+
+    let pulseTick = 0;
+
+    function renderHypergraph() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pulseTick += 0.05;
+
+      // 1. Draw Pod Bounding Containers
+      ctx.lineWidth = 1;
+      // Pod Alpha
+      ctx.strokeStyle = '#1e293b';
+      ctx.strokeRect(45, 45, 145, 150);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.fillText('POD ALPHA (Sarah Chen)', 55, 215);
+
+      // Pod Beta
+      ctx.strokeStyle = '#1e293b';
+      ctx.strokeRect(255, 45, 145, 150);
+      ctx.fillText('POD BETA (Marcus Vance)', 265, 215);
+
+      // Pod Gamma
+      ctx.strokeStyle = '#1e293b';
+      ctx.strokeRect(465, 45, 145, 150);
+      ctx.fillText('POD GAMMA (Priya Patel)', 475, 215);
+
+      // 2. Draw Cross-Bed Edges
+      // Pod internal edges
+      const drawEdge = (b1, b2, isStress) => {
+        const p1 = nodeCoords[b1], p2 = nodeCoords[b2];
+        if (!p1 || !p2) return;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        if (isStress) {
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)';
+          ctx.lineWidth = 2.5;
+        } else {
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.18)';
+          ctx.lineWidth = 1.0;
+        }
+        ctx.stroke();
+      };
+
+      // Alpha edges
+      drawEdge("BED-01", "BED-02", false);
+      drawEdge("BED-01", "BED-03", false);
+      drawEdge("BED-02", "BED-04", true);
+      drawEdge("BED-03", "BED-04", true);
+
+      // Beta edges
+      drawEdge("BED-05", "BED-06", false);
+      drawEdge("BED-05", "BED-07", false);
+      drawEdge("BED-06", "BED-08", true);
+      drawEdge("BED-07", "BED-08", true);
+
+      // Gamma edges
+      drawEdge("BED-09", "BED-10", false);
+      drawEdge("BED-09", "BED-11", true);
+      drawEdge("BED-10", "BED-12", false);
+      drawEdge("BED-11", "BED-12", false);
+
+      // Cross-Pod Contagion / Resource Channels
+      drawEdge("BED-04", "BED-05", true);
+      drawEdge("BED-08", "BED-09", true);
+
+      // 3. Draw Nodes
+      for (const [bedId, pt] of Object.entries(nodeCoords)) {
+        const p = cohort.get(bedId) || { risk_state: bedId === 'BED-04' || bedId === 'BED-08' || bedId === 'BED-11' ? 'critical' : 'stable' };
+        const isCrit = p.risk_state === 'critical';
+        const isWatch = p.risk_state === 'watch';
+        const isSelected = selectedNodeId === bedId;
+
+        // Halo animation for critical nodes
+        if (isCrit) {
+          const haloRadius = 12 + Math.sin(pulseTick) * 3;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, haloRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+
+        // Selection ring
+        if (isSelected) {
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, 14, 0, Math.PI * 2);
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        // Base circle
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 8, 0, Math.PI * 2);
+        ctx.fillStyle = isCrit ? '#ef4444' : (isWatch ? '#f59e0b' : '#10b981');
+        ctx.fill();
+
+        // Label
+        ctx.font = '9px "JetBrains Mono", monospace';
+        ctx.fillStyle = isSelected ? '#38bdf8' : '#cbd5e1';
+        ctx.fillText(bedId, pt.x - 16, pt.y - 12);
+      }
+
+      requestAnimationFrame(renderHypergraph);
+    }
+    requestAnimationFrame(renderHypergraph);
+
+    function syncDoctor() {
+      const savedUser = localStorage.getItem('biopulse_user');
+      const avatarEl = document.getElementById('header-avatar');
+      if (savedUser && avatarEl) {
+        try {
+          const user = JSON.parse(savedUser);
+          avatarEl.textContent = user.full_name.replace('Dr. ', '').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || "SC";
+        } catch(e) {}
+      }
+      if (avatarEl) {
+        avatarEl.onclick = () => {
+          if (confirm("Log out of current clinician enclave session?")) {
+            localStorage.removeItem('biopulse_token');
+            localStorage.removeItem('biopulse_user');
+            window.location.href = "/login";
+          }
+        };
+      }
+    }
+
+    function initStream() {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const socket = new WebSocket(`${proto}//${window.location.host}/ws/telemetry`);
+      socket.onmessage = (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.type === 'TELEMETRY_BATCH') {
+            payload.data.forEach(item => cohort.set(item.bed_id, item));
+
+            if (payload.gnn_topology) {
+              document.getElementById('gnn-lat-val').textContent = `${payload.gnn_topology.gnn_latency_ms} ms`;
+              document.getElementById('sys-cascade-val').textContent = `${payload.gnn_topology.systemic_cascade_index}%`;
+              
+              if (payload.gnn_topology.nurse_pods) {
+                const alpha = payload.gnn_topology.nurse_pods["Pod-Alpha"]?.saturation_pct || 88;
+                const beta = payload.gnn_topology.nurse_pods["Pod-Beta"]?.saturation_pct || 42.5;
+                const gamma = payload.gnn_topology.nurse_pods["Pod-Gamma"]?.saturation_pct || 68.2;
+
+                document.getElementById('alpha-pct-val').textContent = `${alpha}%`;
+                document.getElementById('alpha-bar-fill').style.width = `${alpha}%`;
+
+                document.getElementById('beta-pct-val').textContent = `${beta}%`;
+                document.getElementById('beta-bar-fill').style.width = `${beta}%`;
+
+                document.getElementById('gamma-pct-val').textContent = `${gamma}%`;
+                document.getElementById('gamma-bar-fill').style.width = `${gamma}%`;
+              }
+            }
+
+            updateNodeInspector(selectedNodeId);
+          }
+        } catch (err) {}
+      };
+      socket.onclose = () => setTimeout(initStream, 2000);
+    }
+
+    syncDoctor();
+    initStream();
+  </script>
+</body>
+</html>

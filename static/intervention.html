@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioPulse-Z | Bed 04 Clinical Intervention Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #060b11;
+      --bg-sidebar: #091018;
+      --bg-card: #0d1520;
+      --border-card: #182333;
+      --text-main: #f1f5f9;
+      --text-muted: #64748b;
+      --text-sub: #94a3b8;
+      --blue-accent: #0f62fe;
+      --crit-red: #ef4444;
+      --crit-bg: rgba(239, 68, 68, 0.12);
+      --crit-border: rgba(239, 68, 68, 0.35);
+      --coral-red: #e05252;
+      --watch-yellow: #f59e0b;
+      --watch-bg: rgba(245, 158, 11, 0.12);
+      --watch-border: rgba(245, 158, 11, 0.35);
+      --stable-green: #10b981;
+      --stable-bg: rgba(16, 185, 129, 0.12);
+      --stable-border: rgba(16, 185, 129, 0.35);
+      --font-sans: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg-canvas); color: var(--text-main); font-family: var(--font-sans); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* HEADER */
+    .top-header { height: 64px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-card); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 50; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .brand-badge { background: var(--blue-accent); color: #fff; font-weight: 800; font-size: 13px; padding: 6px 10px; border-radius: 6px; }
+    .brand-text h1 { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; }
+    .brand-text span { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+    .header-center { display: flex; align-items: center; gap: 20px; padding-left: 20px; border-left: 1px solid #162232; }
+    .view-pills { display: flex; background: #0b1420; padding: 4px; border-radius: 8px; border: 1px solid var(--border-card); gap: 4px; }
+    .view-pill { background: transparent; border: none; color: var(--text-sub); font-size: 12px; font-weight: 600; padding: 6px 16px; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; }
+    .view-pill.active { background: var(--blue-accent); color: #ffffff; }
+    .header-right { display: flex; align-items: center; gap: 16px; font-family: var(--font-mono); font-size: 12px; }
+    .live-clock-tag { color: var(--text-muted); padding: 4px 10px; background: #09111c; border: 1px solid #142030; border-radius: 4px; }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #1e293b; border: 1px solid var(--border-card); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+    /* LAYOUT */
+    .app-body { flex: 1; display: flex; }
+    .left-sidebar { width: 220px; background: var(--bg-sidebar); border-right: 1px solid var(--border-card); display: flex; flex-direction: column; justify-content: space-between; padding: 16px 12px; flex-shrink: 0; }
+    .nav-list { display: flex; flex-direction: column; gap: 4px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 6px; color: var(--text-sub); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .nav-item:hover { background: #0e1724; color: #fff; }
+    .nav-item.active { background: var(--blue-accent); color: #fff; }
+    .sidebar-footer { padding: 12px; border-top: 1px solid var(--border-card); }
+    .ibm-logo-text { font-size: 20px; font-weight: 900; letter-spacing: 0.15em; color: #fff; }
+
+    /* INTERVENTION CONSOLE */
+    .intervention-area { flex: 1; padding: 20px 28px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+    .console-header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+    .console-title-area h2 { font-size: 20px; font-weight: 800; color: #ffffff; line-height: 1.2; }
+    .console-title-area span { font-size: 11px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+    .btn-back-matrix { background: transparent; border: 1px solid #1a2536; color: #38bdf8; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+
+    /* Patient Hero Card */
+    .patient-hero-card { background: #0a111a; border: 1px solid #162232; border-radius: 10px; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .pt-identity-group { display: flex; align-items: center; gap: 32px; }
+    .pt-main-id h3 { font-size: 18px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
+    .status-badge { font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    .status-badge.critical { background: var(--crit-bg); color: var(--crit-red); border: 1px solid var(--crit-border); }
+    .pt-meta-col { display: flex; flex-direction: column; }
+    .pt-meta-col .lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+    .pt-meta-col .val { font-size: 14px; font-weight: 700; color: #f1f5f9; margin-top: 2px; }
+    .pt-vitals-group { display: flex; align-items: center; gap: 36px; font-family: var(--font-mono); }
+    .pt-vital-box { display: flex; flex-direction: column; align-items: flex-start; }
+    .pt-vital-box .v-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+    .pt-vital-box .v-num { font-size: 26px; font-weight: 800; line-height: 1.1; margin-top: 2px; }
+    .pt-vital-box .v-unit { font-size: 10px; color: var(--text-muted); font-weight: 400; margin-left: 2px; }
+
+    /* Tri Split */
+    .tri-split { display: grid; grid-template-columns: 1.1fr 1.6fr 0.9fr; gap: 16px; }
+    .tri-panel { background: #0a111a; border: 1px solid #162232; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; }
+    .panel-head-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .panel-head-title { font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+
+    .sbar-items-list { display: flex; flex-direction: column; gap: 10px; }
+    .sbar-row-item { display: flex; gap: 12px; align-items: flex-start; background: #070c13; border: 1px solid #141e2b; padding: 10px 12px; border-radius: 6px; }
+    .sbar-icon-badge { width: 22px; height: 22px; border-radius: 4px; background: rgba(139, 92, 246, 0.2); color: #a78bfa; font-weight: 800; font-size: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .sbar-row-content strong { font-size: 11px; color: #fff; text-transform: uppercase; display: block; margin-bottom: 2px; }
+    .sbar-row-content p { font-size: 11px; color: var(--text-sub); line-height: 1.4; }
+    .btn-generate-ssc { background: #0f62fe; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; }
+
+    /* What-If Titration Lab */
+    .titration-slider-block { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+    .titr-slider-group { display: flex; flex-direction: column; gap: 4px; }
+    .titr-slider-label { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #f1f5f9; }
+    .titr-slider-label strong { font-family: var(--font-mono); color: #38bdf8; }
+    .titr-range-input { width: 100%; accent-color: var(--blue-accent); cursor: pointer; height: 4px; }
+    .range-limits { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-muted); font-family: var(--font-mono); }
+    .trajectory-monitor-card { background: #060a0f; border: 1px solid #162232; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .traj-legend-strip { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+    #console-traj-canvas { width: 100%; height: 110px; background: #03060a; border-radius: 4px; display: block; }
+    .traj-footer-bar { display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-top: 1px dashed #141e2b; }
+    .outcome-pill { font-family: var(--font-mono); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+
+    /* Quick Actions */
+    .quick-actions-list { display: flex; flex-direction: column; gap: 8px; }
+    .btn-action-primary-red { background: var(--coral-red); color: #fff; border: none; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+    .btn-action-secondary { background: #080e16; border: 1px solid #182536; color: #e2e8f0; padding: 10px 14px; border-radius: 6px; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+
+    /* Lower Split */
+    .lower-split { display: grid; grid-template-columns: 1.4fr 1.1fr 1fr; gap: 16px; }
+    .tab-pills-row { display: flex; gap: 6px; background: #080e16; padding: 2px; border-radius: 4px; border: 1px solid #142030; width: fit-content; }
+    .tab-pill-btn { background: transparent; border: none; color: var(--text-muted); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 3px; cursor: pointer; }
+    .tab-pill-btn.active { background: var(--blue-accent); color: #fff; }
+    #console-ecg-canvas { width: 100%; height: 95px; background: #02060b; border: 1px solid #101c2a; border-radius: 4px; display: block; margin-top: 8px; }
+    .waveform-metrics-strip { display: flex; justify-content: space-between; margin-top: 8px; font-family: var(--font-mono); font-size: 12px; }
+
+    .table-trends-grid { display: flex; flex-direction: column; gap: 6px; font-size: 11px; }
+    .trend-row-item { display: flex; justify-content: space-between; padding-bottom: 4px; border-bottom: 1px dashed #142030; }
+    .trend-row-item:last-child { border-bottom: none; }
+
+    .crypto-receipt-card { background: #070e17; border: 1px solid #10b981; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; font-size: 11px; }
+    .crypto-receipt-head { color: var(--stable-green); font-weight: 700; display: flex; align-items: center; gap: 6px; }
+    .crypto-meta-tag { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header class="top-header">
+    <div class="header-left">
+      <div class="brand-badge">BP</div>
+      <div class="brand-text">
+        <h1>BioPulse-Z</h1>
+        <span>v4.2.0</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="view-pills">
+        <a href="/dashboard" class="view-pill">Dashboard</a>
+        <a href="/unit-overview" class="view-pill">Unit Overview</a>
+        <a href="/intervention" class="view-pill active">Clinical Intervention</a>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="sys-badge">
+        <span>IBM z16 / LinuxONE</span>
+        <span>•</span>
+        <span style="color: #38bdf8;">Powered by Telum AI</span>
+      </div>
+      <span class="live-clock-tag" id="live-clock">18 Oct 2026 • --:--:--</span>
+      <div class="user-avatar" id="header-avatar" title="Click to log out">SC</div>
+    </div>
+  </header>
+
+  <!-- APP BODY -->
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <aside class="left-sidebar">
+      <div class="nav-list">
+        <a href="/dashboard" class="nav-item"><span>📊</span> Dashboard</a>
+        <a href="/unit-overview" class="nav-item"><span>🖥️</span> Unit Overview</a>
+        <a href="/intervention" class="nav-item active"><span>🩺</span> Clinical Intervention</a>
+        <a href="/alerts" class="nav-item"><span>🔔</span> Alerts & Actions</a>
+        <a href="/gnn-analytics" class="nav-item"><span>🕸️</span> GNN Analytics</a>
+        <a href="/reports" class="nav-item"><span>📑</span> Reports</a>
+        <a href="/settings" class="nav-item"><span>⚙️</span> Settings</a>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="ibm-logo-text">IBM</div>
+        <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Built for a healthier planet</div>
+      </div>
+    </aside>
+
+    <!-- MAIN INTERVENTION CONTENT -->
+    <main class="intervention-area">
+      <div class="console-header-row">
+        <div class="console-title-area">
+          <h2>Bed 04 Clinical Intervention Console</h2>
+          <span>ASSESS • SIMULATE • REVIEW</span>
+        </div>
+        <a href="/dashboard" class="btn-back-matrix">
+          &larr; Back to Unit Matrix
+        </a>
+      </div>
+
+      <!-- Patient Demographics Strip -->
+      <div class="patient-hero-card">
+        <div class="pt-identity-group">
+          <div class="pt-main-id">
+            <h3>Bed 04 <span class="status-badge critical">CRITICAL</span></h3>
+            <span style="font-size: 11px; color: var(--text-muted);">Sample clinical data</span>
+          </div>
+          <div class="pt-meta-col"><span class="lbl">Patient ID</span><span class="val">ID7846562</span></div>
+          <div class="pt-meta-col"><span class="lbl">Age</span><span class="val">67</span></div>
+          <div class="pt-meta-col"><span class="lbl">Diagnosis</span><span class="val">Suspected Septic Shock</span></div>
+        </div>
+
+        <div class="pt-vitals-group">
+          <div class="pt-vital-box"><span class="v-lbl">HR</span><span class="v-num" style="color: #ef4444;" id="int-v-hr">118<span class="v-unit">bpm</span></span></div>
+          <div class="pt-vital-box"><span class="v-lbl">SpO₂</span><span class="v-num" style="color: #ef4444;" id="int-v-spo2">88<span class="v-unit">%</span></span></div>
+          <div class="pt-vital-box"><span class="v-lbl">MAP</span><span class="v-num" style="color: #ef4444;" id="int-v-map">54<span class="v-unit">mmHg</span></span></div>
+          <div class="pt-vital-box"><span class="v-lbl">Temperature</span><span class="v-num" style="color: #f59e0b;">38.9<span class="v-unit">°C</span></span></div>
+        </div>
+      </div>
+
+      <!-- Upper 3-Col Split -->
+      <div class="tri-split">
+        <!-- SBAR Brief -->
+        <div class="tri-panel">
+          <div>
+            <div class="panel-head-row">
+              <span class="panel-head-title">SBAR Brief</span>
+              <span style="font-size: 10px; font-family: var(--font-mono); color: #a78bfa;">AI Generated • 0.3s</span>
+            </div>
+
+            <div class="sbar-items-list">
+              <div class="sbar-row-item"><div class="sbar-icon-badge">S</div><div class="sbar-row-content"><strong>Situation</strong><p>Patient with suspected septic shock. Rapid deterioration and increasing oxygen requirements.</p></div></div>
+              <div class="sbar-row-item"><div class="sbar-icon-badge">B</div><div class="sbar-row-content"><strong>Background</strong><p>Clinical history and recent laboratory information; review pending.</p></div></div>
+              <div class="sbar-row-item"><div class="sbar-icon-badge">A</div><div class="sbar-row-content"><strong>Assessment</strong><p>MAP 54, HR 118, SpO₂ 88%; signs of possible hypoperfusion.</p></div></div>
+              <div class="sbar-row-item"><div class="sbar-icon-badge">R</div><div class="sbar-row-content"><strong>Recommendation</strong><p>Urgent bedside review; assess oxygenation, perfusion and fluid responsiveness. Review SSC bundle.</p></div></div>
+            </div>
+          </div>
+
+          <button class="btn-generate-ssc" onclick="alert('SURVIVING SEPSIS CAMPAIGN BUNDLE GENERATED: Orders dispatched.')">
+            <span>📄</span> Generate SSC 1-Hour Bundle
+          </button>
+        </div>
+
+        <!-- What-If Titration Lab -->
+        <div class="tri-panel">
+          <div>
+            <div class="panel-head-row">
+              <span class="panel-head-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M10 2v7.31L4.66 18.2A2 2 0 0 0 6.4 21h11.2a2 2 0 0 0 1.74-2.8L14 9.31V2"/></svg>
+                What-If Titration Lab
+              </span>
+              <span style="font-size: 10px; font-family: var(--font-mono); color: #38bdf8;">Live Simulation &lt;1ms</span>
+            </div>
+
+            <div class="titration-slider-block">
+              <div class="titr-slider-group">
+                <div class="titr-slider-label"><span>Crystalloid Bolus</span><strong id="int-lbl-fluid">0 mL</strong></div>
+                <input type="range" class="titr-range-input" id="int-slider-fluid" min="0" max="2000" step="250" value="0">
+                <div class="range-limits"><span>0 mL</span><span>2000 mL</span></div>
+              </div>
+
+              <div class="titr-slider-group">
+                <div class="titr-slider-label"><span>Norepinephrine / Levophed</span><strong id="int-lbl-norepi">0.00 mcg/kg/min</strong></div>
+                <input type="range" class="titr-range-input" id="int-slider-norepi" min="0" max="0.50" step="0.05" value="0.00">
+                <div class="range-limits"><span>0.00</span><span>0.50 mcg/kg/min</span></div>
+              </div>
+            </div>
+
+            <div class="trajectory-monitor-card">
+              <div class="traj-legend-strip">
+                <span style="font-weight: 700; color: #f1f5f9;">30-Minute Hemodynamic Trajectory</span>
+                <span style="color: #64748b;">PROJECTED</span>
+              </div>
+              <div class="traj-legend-strip" style="color: #94a3b8; font-size: 10px; margin-top: 2px;">
+                <div style="display: flex; gap: 12px;">
+                  <span style="color: #38bdf8; font-weight: 600;">— MAP • mmHg</span>
+                  <span style="color: #f59e0b; font-weight: 600;">··· HR • bpm</span>
+                  <span style="color: #818cf8; font-weight: 600;">— SpO₂ • %</span>
+                </div>
+              </div>
+              
+              <canvas id="console-traj-canvas" width="540" height="110"></canvas>
+
+              <div style="display: flex; justify-content: space-between; font-size: 9px; color: var(--text-muted); font-family: var(--font-mono); padding: 0 4px;">
+                <span>Now</span><span>+10 min</span><span>+20 min</span><span>+30 min</span>
+              </div>
+
+              <div class="traj-footer-bar">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 10px; color: var(--text-muted);">Projected Outcome</span>
+                  <span class="outcome-pill" id="int-outcome-pill">CRITICAL</span>
+                </div>
+                <span style="font-size: 9px; color: var(--text-muted);">Illustrative simulation. Clinician review required.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="tri-panel">
+          <div>
+            <div class="panel-head-row">
+              <span class="panel-head-title">Quick Actions</span>
+              <span style="color: #f59e0b;">⚡</span>
+            </div>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 14px;">All actions require clinician review and confirmation.</p>
+
+            <div class="quick-actions-list">
+              <button class="btn-action-primary-red" onclick="alert('CODE SEPSIS DISPATCHED: Rapid response team alerted. Order bundle queued in IBM Db2.')"><span>🚨</span> Code Sepsis</button>
+              <button class="btn-action-secondary" onclick="alert('STAT LABS ORDERED: Serum Lactate, Blood Cultures x2, CBC, ABG.')"><span>🧪</span> Order Labs</button>
+              <button class="btn-action-secondary" onclick="alert('ANTIBIOTICS QUEUED: Broad-Spectrum IV Piperacillin-Tazobactam.')"><span>💊</span> Start Antibiotics</button>
+              <button class="btn-action-secondary" onclick="alert('RESPIRATORY NOTIFIED: High-flow nasal cannula protocol requested.')"><span>🫁</span> Notify Respiratory</button>
+              <button class="btn-action-secondary" onclick="alert('OVERRIDE DOCUMENTED: Committed to zERT immutable audit ledger.')"><span>📝</span> Document Override</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lower 3-Col Split -->
+      <div class="lower-split">
+        <!-- Waveforms -->
+        <div class="tri-panel">
+          <div>
+            <div class="panel-head-row">
+              <span class="panel-head-title">Live Waveforms & Trends</span>
+              <span style="font-size: 10px; font-family: var(--font-mono); color: var(--stable-green);">● LIVE • SAMPLE</span>
+            </div>
+
+            <div class="tab-pills-row">
+              <button class="tab-pill-btn active">ECG</button>
+              <button class="tab-pill-btn">Arterial Line</button>
+              <button class="tab-pill-btn">SpO₂</button>
+              <button class="tab-pill-btn">Resp</button>
+            </div>
+
+            <canvas id="console-ecg-canvas" width="460" height="95"></canvas>
+
+            <div class="waveform-metrics-strip">
+              <div><span style="font-size: 9px; color: var(--text-muted);">HR</span> <strong style="color: #ef4444;" id="wf-hr">118</strong> <span style="font-size: 9px; color: var(--text-muted);">bpm</span></div>
+              <div><span style="font-size: 9px; color: var(--text-muted);">SpO₂</span> <strong style="color: #ef4444;" id="wf-spo2">88</strong> <span style="font-size: 9px; color: var(--text-muted);">%</span></div>
+              <div><span style="font-size: 9px; color: var(--text-muted);">MAP</span> <strong style="color: #ef4444;" id="wf-map">54</strong> <span style="font-size: 9px; color: var(--text-muted);">mmHg</span></div>
+              <div><span style="font-size: 9px; color: var(--text-muted);">Lead II</span> <strong style="color: var(--stable-green);">60 fps</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Trends -->
+        <div class="tri-panel">
+          <div>
+            <div class="panel-head-row">
+              <span class="panel-head-title">Recent Trends</span>
+              <span style="font-size: 10px; color: var(--text-muted);">Sample • last 2 h</span>
+            </div>
+
+            <div class="table-trends-grid">
+              <div class="trend-row-item"><span style="color: var(--text-muted);">Lactate</span><span><strong>4.8 mmol/L</strong> <span style="color: #ef4444;">↑ 0.7</span></span></div>
+              <div class="trend-row-item"><span style="color: var(--text-muted);">WBC</span><span><strong>18.2 × 10⁹/L</strong> <span style="color: #ef4444;">↑ 1.6</span></span></div>
+              <div class="trend-row-item"><span style="color: var(--text-muted);">Creatinine</span><span><strong>1.9 mg/dL</strong> <span style="color: #ef4444;">↑ 0.3</span></span></div>
+              <div class="trend-row-item"><span style="color: var(--text-muted);">Urine Output</span><span><strong>18 mL/h</strong> <span style="color: #ef4444;">↓ ?</span></span></div>
+            </div>
+
+            <div style="margin-top: 12px;">
+              <div class="panel-head-row" style="margin-bottom: 6px;">
+                <span style="font-size: 11px; font-weight: 700; color: #fff;">Titration History</span>
+                <span style="font-size: 9px; color: var(--text-muted);">Simulation only</span>
+              </div>
+              <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-sub); display: flex; flex-direction: column; gap: 3px;">
+                <div>14:31 &nbsp; Levophed &nbsp; 0.10 &rarr; 0.15 mcg/kg/min</div>
+                <div>14:30 &nbsp; Crystalloid &nbsp; 500 &rarr; 1000 mL</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cryptographic Receipt -->
+        <div class="tri-panel" style="justify-content: space-between;">
+          <div class="crypto-receipt-card">
+            <div class="crypto-receipt-head"><span>🛡️</span> Cryptographic Receipt</div>
+            <div style="color: var(--stable-green); font-weight: 700;">✓ Triage Override Logged</div>
+            <div class="crypto-meta-tag" style="margin-top: 6px;">
+              Signature: <strong style="color: #fff;">ML-DSA + SHA-256</strong><br>
+              Reference ID: <span style="color: #38bdf8;">DEMO-B04-261017-143205</span><br>
+              Timestamp: 18 Oct 2026 • 01:25:00 UTC
+            </div>
+            <p style="font-size: 9px; color: var(--text-muted); margin-top: 4px;">Demonstration receipt only. Signed via IBM Crypto Express 8S emulation.</p>
+          </div>
+
+          <div style="font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: #080e16; border-radius: 4px;">
+            <span>👤</span> Clinician in control. Nothing is ordered automatically.
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('biopulse_token')) {
+      window.location.href = "/login";
+    }
+
+    function updateClock() {
+      const el = document.getElementById('live-clock');
+      if (el) el.textContent = `18 Oct 2026 • ${new Date().toTimeString().slice(0, 8)}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // 60FPS ECG Oscilloscope
+    const consoleEcgCanvas = document.getElementById('console-ecg-canvas');
+    const consoleEcgCtx = consoleEcgCanvas ? consoleEcgCanvas.getContext('2d') : null;
+    let ecgX = 0, ecgY = 45, stepCount = 0;
+
+    function renderECG() {
+      if (consoleEcgCtx && consoleEcgCanvas) {
+        consoleEcgCtx.fillStyle = 'rgba(2, 6, 11, 0.08)';
+        consoleEcgCtx.fillRect(ecgX, 0, 3, consoleEcgCanvas.height);
+        consoleEcgCtx.lineWidth = 1.75;
+        consoleEcgCtx.strokeStyle = '#10b981';
+        consoleEcgCtx.beginPath();
+        consoleEcgCtx.moveTo(ecgX, ecgY);
+
+        ecgX += 2;
+        stepCount++;
+
+        let targetY = 45;
+        const cycle = stepCount % 60;
+        if (cycle === 10) targetY = 40;
+        else if (cycle === 20) targetY = 52;
+        else if (cycle === 22) targetY = 12;
+        else if (cycle === 25) targetY = 76;
+        else if (cycle === 35) targetY = 36;
+
+        ecgY += (targetY - ecgY) * 0.45;
+        consoleEcgCtx.lineTo(ecgX, ecgY);
+        consoleEcgCtx.stroke();
+
+        if (ecgX > consoleEcgCanvas.width) ecgX = 0;
+      }
+      requestAnimationFrame(renderECG);
+    }
+    requestAnimationFrame(renderECG);
+
+    // Dynamic Trajectory Plotter
+    function drawTrajectoryCurves(steps) {
+      const canvas = document.getElementById('console-traj-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const yMin = 40, yMax = 140, padLeft = 34, padRight = 18, padTop = 12, padBottom = 16;
+      const plotW = w - padLeft - padRight;
+      const plotH = h - padTop - padBottom;
+
+      function getY(val) {
+        return padTop + plotH - ((Math.max(yMin, Math.min(yMax, val)) - yMin) / (yMax - yMin)) * plotH;
+      }
+
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#475569';
+      ctx.strokeStyle = '#141e2b';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+
+      [120, 100, 80, 60].forEach(val => {
+        const y = getY(val);
+        ctx.fillText(val.toString(), 6, y + 3);
+        ctx.beginPath();
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(w - padRight, y);
+        ctx.stroke();
+      });
+
+      const targetMapY = getY(65);
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.25)';
+      ctx.setLineDash([2, 4]);
+      ctx.beginPath();
+      ctx.moveTo(padLeft, targetMapY);
+      ctx.lineTo(w - padRight, targetMapY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (!steps || steps.length < 2) return;
+      const stepCount = steps.length - 1;
+      const finalStep = steps[steps.length - 1];
+
+      let mapColor = '#ef4444';
+      if (finalStep.map >= 65 && finalStep.shock_index <= 0.85) mapColor = '#10b981';
+      else if (finalStep.map >= 60 || finalStep.shock_index <= 1.0) mapColor = '#f59e0b';
+
+      // MAP Curve
+      ctx.strokeStyle = mapColor;
+      ctx.lineWidth = 2.8;
+      ctx.beginPath();
+      steps.forEach((s, i) => {
+        const x = padLeft + (i / stepCount) * plotW;
+        const y = getY(s.map);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // HR Curve
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2.0;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      steps.forEach((s, i) => {
+        const x = padLeft + (i / stepCount) * plotW;
+        const y = getY(s.hr);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // SpO2 Curve
+      ctx.strokeStyle = '#818cf8';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      steps.forEach((s, i) => {
+        const x = padLeft + (i / stepCount) * plotW;
+        const y = getY(s.spo2);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      const lastX = padLeft + plotW;
+      ctx.fillStyle = mapColor;
+      ctx.beginPath();
+      ctx.arc(lastX, getY(finalStep.map), 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(lastX, getY(finalStep.hr), 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function generateLocalTrajectory(fluidMl, norepiDose) {
+      const baseHr = 118, baseSbp = 88, baseDbp = 54, baseSpo2 = 88;
+      const isUntreated = (fluidMl === 0 && norepiDose === 0);
+      const fluidFactor = fluidMl / 500.0;
+      const pressorFactor = norepiDose / 0.10;
+
+      const sbpGain = fluidFactor * 10.0 + pressorFactor * 16.0;
+      const dbpGain = pressorFactor * 12.0;
+      const hrDrop = fluidFactor * 12.0 + pressorFactor * 8.0;
+      const spo2Gain = Math.min(10.0, (fluidFactor + pressorFactor) * 3.0);
+
+      const steps = [];
+      const numSteps = 6;
+      for (let i = 0; i <= numSteps; i++) {
+        const frac = i / numSteps;
+        let sbp, dbp, hr, spo2;
+
+        if (isUntreated) {
+          sbp = Math.round(baseSbp - (8 * frac));
+          dbp = Math.round(baseDbp - (5 * frac));
+          hr = Math.round(Math.min(140, baseHr + (10 * frac)));
+          spo2 = Math.round(Math.max(82, baseSpo2 - (4 * frac)));
+        } else {
+          sbp = Math.round(baseSbp + sbpGain * frac);
+          dbp = Math.round(baseDbp + dbpGain * frac);
+          hr = Math.round(Math.max(62, baseHr - hrDrop * frac));
+          spo2 = Math.round(Math.min(99, baseSpo2 + spo2Gain * frac));
+        }
+
+        const mapVal = Math.round((sbp + 2 * dbp) / 3);
+        const si = Number((hr / Math.max(sbp, 1)).toFixed(2));
+        steps.push({ step_min: i * 5, sbp, dbp, hr, map: mapVal, spo2, shock_index: si });
+      }
+      return steps;
+    }
+
+    function updateOutcomeBadge(outcome) {
+      const intOutcomePill = document.getElementById('int-outcome-pill');
+      if (!intOutcomePill) return;
+      intOutcomePill.textContent = outcome;
+      if (outcome === "STABLE") {
+        intOutcomePill.style.color = "var(--stable-green)";
+        intOutcomePill.style.background = "var(--stable-bg)";
+        intOutcomePill.style.borderColor = "var(--stable-border)";
+      } else if (outcome === "GUARDED") {
+        intOutcomePill.style.color = "var(--watch-yellow)";
+        intOutcomePill.style.background = "var(--watch-bg)";
+        intOutcomePill.style.borderColor = "var(--watch-border)";
+      } else {
+        intOutcomePill.textContent = "CRITICAL";
+        intOutcomePill.style.color = "var(--crit-red)";
+        intOutcomePill.style.background = "var(--crit-bg)";
+        intOutcomePill.style.borderColor = "var(--crit-border)";
+      }
+    }
+
+    async function executeInterventionTitration() {
+      const sliderFluid = document.getElementById('int-slider-fluid');
+      const sliderNorepi = document.getElementById('int-slider-norepi');
+      const fluidVal = parseFloat(sliderFluid ? sliderFluid.value : 0);
+      const norepiVal = parseFloat(sliderNorepi ? sliderNorepi.value : 0.0);
+
+      const localSteps = generateLocalTrajectory(fluidVal, norepiVal);
+      const finalLocal = localSteps[localSteps.length - 1];
+      
+      let localOutcome = "CRITICAL";
+      if (finalLocal.map >= 65 && finalLocal.shock_index <= 0.85) localOutcome = "STABLE";
+      else if (finalLocal.map >= 60 || finalLocal.shock_index <= 1.0) localOutcome = "GUARDED";
+      
+      updateOutcomeBadge(localOutcome);
+      drawTrajectoryCurves(localSteps);
+
+      try {
+        const res = await fetch('/api/simulation/titrate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bed_id: "BED-04",
+            current_hr: 118,
+            current_sbp: 88,
+            current_dbp: 54,
+            current_rr: 24,
+            current_spo2: 88,
+            fluid_bolus_ml: fluidVal,
+            norepi_dose: norepiVal,
+            o2_flow_lpm: 2.0
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          updateOutcomeBadge(data.projected_outcome);
+          if (data.steps && data.steps.length > 0) drawTrajectoryCurves(data.steps);
+        }
+      } catch (err) {}
+    }
+
+    const intSliderFluid = document.getElementById('int-slider-fluid');
+    const intSliderNorepi = document.getElementById('int-slider-norepi');
+    const intLblFluid = document.getElementById('int-lbl-fluid');
+    const intLblNorepi = document.getElementById('int-lbl-norepi');
+
+    if (intSliderFluid) {
+      intSliderFluid.addEventListener('input', () => {
+        if (intLblFluid) intLblFluid.textContent = `${intSliderFluid.value} mL`;
+        executeInterventionTitration();
+      });
+    }
+
+    if (intSliderNorepi) {
+      intSliderNorepi.addEventListener('input', () => {
+        if (intLblNorepi) intLblNorepi.textContent = `${parseFloat(intSliderNorepi.value).toFixed(2)} mcg/kg/min`;
+        executeInterventionTitration();
+      });
+    }
+
+    function syncDoctor() {
+      const savedUser = localStorage.getItem('biopulse_user');
+      const avatarEl = document.getElementById('header-avatar');
+      if (savedUser && avatarEl) {
+        try {
+          const user = JSON.parse(savedUser);
+          avatarEl.textContent = user.full_name.replace('Dr. ', '').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || "SC";
+        } catch(e) {}
+      }
+      if (avatarEl) {
+        avatarEl.onclick = () => {
+          if (confirm("Log out of current clinician enclave session?")) {
+            localStorage.removeItem('biopulse_token');
+            localStorage.removeItem('biopulse_user');
+            window.location.href = "/login";
+          }
+        };
+      }
+    }
+
+    syncDoctor();
+    executeInterventionTitration();
+  </script>
+</body>
+</html>

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioPulse-Z | Alerts & Actions Triage Queue</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #060b11;
+      --bg-sidebar: #091018;
+      --bg-card: #0d1520;
+      --border-card: #182333;
+      --text-main: #f1f5f9;
+      --text-muted: #64748b;
+      --text-sub: #94a3b8;
+      --blue-accent: #0f62fe;
+      --crit-red: #ef4444;
+      --crit-bg: rgba(239, 68, 68, 0.12);
+      --crit-border: rgba(239, 68, 68, 0.35);
+      --coral-red: #e05252;
+      --watch-yellow: #f59e0b;
+      --watch-bg: rgba(245, 158, 11, 0.12);
+      --watch-border: rgba(245, 158, 11, 0.35);
+      --stable-green: #10b981;
+      --stable-bg: rgba(16, 185, 129, 0.12);
+      --stable-border: rgba(16, 185, 129, 0.35);
+      --purple-accent: #8b5cf6;
+      --font-sans: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg-canvas); color: var(--text-main); font-family: var(--font-sans); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* TOP HEADER */
+    .top-header { height: 64px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-card); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 50; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .brand-badge { background: var(--blue-accent); color: #fff; font-weight: 800; font-size: 13px; padding: 6px 10px; border-radius: 6px; }
+    .brand-text h1 { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; }
+    .brand-text span { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+    .header-center { display: flex; align-items: center; gap: 20px; padding-left: 20px; border-left: 1px solid #162232; }
+    .view-pills { display: flex; background: #0b1420; padding: 4px; border-radius: 8px; border: 1px solid var(--border-card); gap: 4px; }
+    .view-pill { background: transparent; border: none; color: var(--text-sub); font-size: 12px; font-weight: 600; padding: 6px 16px; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; }
+    .view-pill.active { background: var(--blue-accent); color: #ffffff; }
+    .header-right { display: flex; align-items: center; gap: 16px; font-family: var(--font-mono); font-size: 12px; }
+    .live-clock-tag { color: var(--text-muted); padding: 4px 10px; background: #09111c; border: 1px solid #142030; border-radius: 4px; }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #1e293b; border: 1px solid var(--border-card); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+    /* LAYOUT */
+    .app-body { flex: 1; display: flex; }
+    .left-sidebar { width: 220px; background: var(--bg-sidebar); border-right: 1px solid var(--border-card); display: flex; flex-direction: column; justify-content: space-between; padding: 16px 12px; flex-shrink: 0; }
+    .nav-list { display: flex; flex-direction: column; gap: 4px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 6px; color: var(--text-sub); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .nav-item:hover { background: #0e1724; color: #fff; }
+    .nav-item.active { background: var(--blue-accent); color: #fff; }
+    .sidebar-footer { padding: 12px; border-top: 1px solid var(--border-card); }
+    .ibm-logo-text { font-size: 20px; font-weight: 900; letter-spacing: 0.15em; color: #fff; }
+
+    /* MAIN CONTENT */
+    .content-area { flex: 1; padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+    .page-title-row { display: flex; justify-content: space-between; align-items: center; }
+    .page-title-row h2 { font-size: 20px; font-weight: 800; color: #fff; }
+    .page-title-row span { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+
+    /* STATS SUMMARY BAR */
+    .stats-summary-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .stat-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px 16px; }
+    .stat-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+    .stat-val { font-family: var(--font-mono); font-size: 22px; font-weight: 800; margin-top: 4px; }
+
+    /* MCI STRESS BUTTON */
+    .btn-mci-trigger { background: #7f1d1d; border: 1px solid var(--crit-red); color: #fff; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.15s; }
+    .btn-mci-trigger:hover { background: var(--crit-red); }
+    .btn-mci-trigger.active { background: var(--crit-red); animation: pulseAlert 1.5s infinite; }
+    @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+    /* TWO COLUMN SPLIT: ACTIVE QUEUE (65%) + IMMUTABLE LEDGER (35%) */
+    .alerts-split-layout { display: grid; grid-template-columns: 1.6fr 1.1fr; gap: 16px; }
+    .panel-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #142030; padding-bottom: 10px; }
+    .panel-head h3 { font-size: 13px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px; }
+
+    /* ALERT CARDS */
+    .alert-queue-list { display: flex; flex-direction: column; gap: 10px; }
+    .alert-ticket-card { background: #070d14; border: 1px solid #1a2738; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; transition: border-color 0.15s; }
+    .alert-ticket-card.critical { border-left: 4px solid var(--crit-red); background: rgba(239, 68, 68, 0.03); }
+    .alert-ticket-card.warning { border-left: 4px solid var(--watch-yellow); }
+    .ticket-top { display: flex; justify-content: space-between; align-items: center; }
+    .ticket-bed { font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: #fff; }
+    .ticket-vitals { display: flex; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text-sub); }
+    .ticket-message { font-size: 12px; color: #e2e8f0; line-height: 1.4; }
+    .ticket-actions-bar { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px dashed #142030; }
+    
+    .status-badge { font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    .status-badge.critical { background: var(--crit-bg); color: var(--crit-red); border: 1px solid var(--crit-border); }
+    .status-badge.warning { background: var(--watch-bg); color: var(--watch-yellow); border: 1px solid var(--watch-border); }
+
+    .btn-action-sm { background: var(--blue-accent); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-action-sm:hover { background: #0353e9; }
+    .btn-action-red { background: var(--coral-red); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; }
+
+    /* AUDIT LOG LIST */
+    .audit-log-stream { display: flex; flex-direction: column; gap: 8px; max-height: 540px; overflow-y: auto; }
+    .audit-entry-card { background: #060b11; border: 1px solid #142030; border-radius: 6px; padding: 10px 12px; font-size: 11px; font-family: var(--font-mono); }
+    .audit-entry-top { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 10px; margin-bottom: 4px; }
+    .audit-sig { color: #38bdf8; word-break: break-all; margin-top: 4px; font-size: 10px; }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header class="top-header">
+    <div class="header-left">
+      <div class="brand-badge">BP</div>
+      <div class="brand-text">
+        <h1>BioPulse-Z</h1>
+        <span>v4.2.0</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="view-pills">
+        <a href="/dashboard" class="view-pill">Dashboard</a>
+        <a href="/unit-overview" class="view-pill">Unit Overview</a>
+        <a href="/intervention" class="view-pill">Clinical Intervention</a>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="sys-badge">
+        <span>IBM z16 / LinuxONE</span>
+        <span>•</span>
+        <span style="color: #38bdf8;">Powered by Telum AI</span>
+      </div>
+      <span class="live-clock-tag" id="live-clock">18 Oct 2026 • --:--:--</span>
+      <div class="user-avatar" id="header-avatar" title="Click to log out">SC</div>
+    </div>
+  </header>
+
+  <!-- APP BODY -->
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <aside class="left-sidebar">
+      <div class="nav-list">
+        <a href="/dashboard" class="nav-item"><span>📊</span> Dashboard</a>
+        <a href="/unit-overview" class="nav-item"><span>🖥️</span> Unit Overview</a>
+        <a href="/intervention" class="nav-item"><span>🩺</span> Clinical Intervention</a>
+        <a href="/alerts" class="nav-item active"><span>🔔</span> Alerts & Actions</a>
+        <a href="/gnn-analytics" class="nav-item"><span>🕸️</span> GNN Analytics</a>
+        <a href="/reports" class="nav-item"><span>📑</span> Reports</a>
+        <a href="/settings" class="nav-item"><span>⚙️</span> Settings</a>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="ibm-logo-text">IBM</div>
+        <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Built for a healthier planet</div>
+      </div>
+    </aside>
+
+    <!-- MAIN ALERTS & ACTIONS CONTENT -->
+    <main class="content-area">
+      <div class="page-title-row">
+        <div>
+          <h2>Emergency Alerts & Clinical Action Queue</h2>
+          <span>IBM z16 In-Transaction Triage Dispatch & Post-Quantum Cryptographic Audit</span>
+        </div>
+        <button class="btn-mci-trigger" id="btn-mci-stress" onclick="toggleMciSurge()">
+          <span>⚠</span> TRIGGER MASS-CASUALTY SURGE (STAGE DEMO)
+        </button>
+      </div>
+
+      <!-- Stats Summary Strip -->
+      <div class="stats-summary-strip">
+        <div class="stat-box">
+          <div class="stat-lbl">Active Unacknowledged Alerts</div>
+          <div class="stat-val" style="color: var(--crit-red);" id="active-alerts-count">3 Tickets</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Mean Telum Triage Latency</div>
+          <div class="stat-val" style="color: var(--stable-green);">0.84 ms</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Dispatched Protocol Orders</div>
+          <div class="stat-val" id="dispatched-orders-count">8 Orders</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Crypto Express 8S Receipts</div>
+          <div class="stat-val" style="color: #38bdf8;">100% Signed</div>
+        </div>
+      </div>
+
+      <!-- Main Split: Live Queue (Left) + Cryptographic Audit Stream (Right) -->
+      <div class="alerts-split-layout">
+        
+        <!-- LEFT: Active Triage Queue -->
+        <div class="panel-card">
+          <div class="panel-head">
+            <h3><span>🚨</span> Priority Clinical Triage Queue</h3>
+            <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">SLA: &lt; 60 seconds</span>
+          </div>
+
+          <div class="alert-queue-list" id="alerts-queue-container">
+            <!-- Ticket 1: Bed 04 -->
+            <div class="alert-ticket-card critical">
+              <div class="ticket-top">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="ticket-bed">BED-04</span>
+                  <span class="status-badge critical">SEPSIS SHOCK DRIFT</span>
+                </div>
+                <span style="font-size: 11px; color: var(--crit-red); font-family: var(--font-mono); font-weight: 700;">2m ago</span>
+              </div>
+              <div class="ticket-vitals">
+                <span>HR: <strong style="color: #ef4444;" id="t-b4-hr">118</strong> bpm</span>
+                <span>MAP: <strong style="color: #ef4444;" id="t-b4-map">54</strong> mmHg</span>
+                <span>SpO₂: <strong style="color: #ef4444;" id="t-b4-spo2">88</strong>%</span>
+                <span>Shock Index: <strong style="color: #ef4444;" id="t-b4-si">1.34</strong></span>
+              </div>
+              <p class="ticket-message">
+                Multi-variable decompensation curve detected by IBM Telum AI. Hypotension refractoriness with rising arterial lactate. Immediate fluid resuscitation protocol advised.
+              </p>
+              <div class="ticket-actions-bar">
+                <span style="font-size: 11px; color: var(--text-muted);">Assigned Pod: <strong>Pod Alpha (Sarah Chen, RN)</strong></span>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn-action-red" onclick="dispatchDirect('BED-04', 'CODE_SEPSIS')">Code Sepsis</button>
+                  <a href="/intervention" class="btn-action-sm">Titration Lab &rarr;</a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ticket 2: Bed 08 -->
+            <div class="alert-ticket-card critical">
+              <div class="ticket-top">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="ticket-bed">BED-08</span>
+                  <span class="status-badge critical">UROSEPSIS COLLAPSE</span>
+                </div>
+                <span style="font-size: 11px; color: var(--crit-red); font-family: var(--font-mono); font-weight: 700;">4m ago</span>
+              </div>
+              <div class="ticket-vitals">
+                <span>HR: <strong style="color: #ef4444;">140</strong> bpm</span>
+                <span>MAP: <strong style="color: #ef4444;">50</strong> mmHg</span>
+                <span>SpO₂: <strong style="color: #ef4444;">85</strong>%</span>
+                <span>Shock Index: <strong style="color: #ef4444;">1.86</strong></span>
+              </div>
+              <p class="ticket-message">
+                Acute oliguria and hyperdynamic tachyarrhythmia. MAP sustained below 65 mmHg threshold for >12 minutes.
+              </p>
+              <div class="ticket-actions-bar">
+                <span style="font-size: 11px; color: var(--text-muted);">Assigned Pod: <strong>Pod Beta (Marcus Vance, RN)</strong></span>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn-action-red" onclick="dispatchDirect('BED-08', 'RRT_DISPATCH')">Dispatch RRT</button>
+                  <button class="btn-action-sm" onclick="acknowledgeAlert('BED-08')">Acknowledge</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ticket 3: Bed 11 -->
+            <div class="alert-ticket-card warning">
+              <div class="ticket-top">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="ticket-bed">BED-11</span>
+                  <span class="status-badge warning">TACHYCARDIA SURGE</span>
+                </div>
+                <span style="font-size: 11px; color: var(--watch-yellow); font-family: var(--font-mono);">7m ago</span>
+              </div>
+              <div class="ticket-vitals">
+                <span>HR: <strong style="color: #f59e0b;">130</strong> bpm</span>
+                <span>MAP: <strong style="color: #fff;">58</strong> mmHg</span>
+                <span>SpO₂: <strong style="color: #fff;">90</strong>%</span>
+                <span>Shock Index: <strong style="color: #f59e0b;">1.12</strong></span>
+              </div>
+              <p class="ticket-message">
+                Neurological trauma patient exhibiting sympathetic storming. Intracranial pressure monitoring correlation recommended.
+              </p>
+              <div class="ticket-actions-bar">
+                <span style="font-size: 11px; color: var(--text-muted);">Assigned Pod: <strong>Pod Gamma (Priya Patel, RN)</strong></span>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn-action-sm" onclick="acknowledgeAlert('BED-11')">Acknowledge Alert</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Immutable Post-Quantum Audit Stream -->
+        <div class="panel-card">
+          <div class="panel-head">
+            <h3><span>🛡️</span> zERT Quantum-Safe Audit Log</h3>
+            <span style="font-size: 10px; color: var(--stable-green); font-family: var(--font-mono);">FDA 21 CFR § 11</span>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted);">Every triage action and physician override committed to IBM z16 immutable ledger with dual ML-DSA signatures.</p>
+
+          <div class="audit-log-stream" id="audit-stream-box">
+            <div class="audit-entry-card">
+              <div class="audit-entry-top">
+                <span>ACTION: CODE_SEPSIS_DISPATCH</span>
+                <span>18 Oct 2026 • 01:25:00 UTC</span>
+              </div>
+              <div>Bed: <strong style="color: #fff;">BED-04</strong> | MRN-849204 | Clinician: <strong>Dr. Sarah Chen, MD</strong></div>
+              <div>Shock Index: <strong style="color: #ef4444;">1.34</strong> | Order: <strong>30 mL/kg Crystalloids + Levophed</strong></div>
+              <div class="audit-sig">Hash: zERT-MLDSA-8F92A14B8C90184E9D21A3B0</div>
+            </div>
+
+            <div class="audit-entry-card">
+              <div class="audit-entry-top">
+                <span>ACTION: TITRATION_SIM_ADJUST</span>
+                <span>18 Oct 2026 • 01:20:14 UTC</span>
+              </div>
+              <div>Bed: <strong style="color: #fff;">BED-04</strong> | Forward simulation tested: <strong>1000 mL + 0.15 mcg/kg/min</strong></div>
+              <div>Simulated Outcome: <span style="color: var(--stable-green); font-weight: 700;">STABLE (MAP 68 mmHg)</span></div>
+              <div class="audit-sig">Hash: zERT-MLDSA-1A49E820FBC3019842DA5412</div>
+            </div>
+
+            <div class="audit-entry-card">
+              <div class="audit-entry-top">
+                <span>ACTION: RRT_TRIAGE_OVERRIDE</span>
+                <span>18 Oct 2026 • 00:54:22 UTC</span>
+              </div>
+              <div>Bed: <strong style="color: #fff;">BED-08</strong> | Rapid response team floor mobilization confirmed.</div>
+              <div class="audit-sig">Hash: zERT-MLDSA-74B012CD903E7841FA660149</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('biopulse_token')) {
+      window.location.href = "/login";
+    }
+
+    let mciSurgeActive = false;
+
+    function updateClock() {
+      const el = document.getElementById('live-clock');
+      if (el) el.textContent = `18 Oct 2026 • ${new Date().toTimeString().slice(0, 8)}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Direct Dispatch API Call
+    async function dispatchDirect(bedId, actionType) {
+      try {
+        const res = await fetch('/api/dispatch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bed_id: bedId,
+            mrn: `MRN-${bedId.replace('BED-', '8492')}`,
+            action_type: actionType,
+            risk_score: 0.92,
+            shock_index: 1.34,
+            sbar_summary: `Urgent bedside triage mobilization executed for ${bedId}`
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          alert(`✓ ACTION COMMITTED: ${actionType} logged to IBM z16 Audit Register.\nSignature: ${data.crypto_signature}`);
+          addAuditEntry(bedId, actionType, data.crypto_signature);
+        }
+      } catch (err) {
+        alert(`Failed to commit action to mainframe ledger: ${err}`);
+      }
+    }
+
+    function acknowledgeAlert(bedId) {
+      alert(`Alert for ${bedId} acknowledged by attending clinician.`);
+      addAuditEntry(bedId, "CLINICIAN_ALERT_ACK", "zERT-MLDSA-" + Math.random().toString(36).substring(2, 14).toUpperCase());
+    }
+
+    function addAuditEntry(bedId, actionType, signature) {
+      const stream = document.getElementById('audit-stream-box');
+      if (!stream) return;
+      const card = document.createElement('div');
+      card.className = 'audit-entry-card';
+      const nowStr = new Date().toUTCString();
+      card.innerHTML = `
+        <div class="audit-entry-top">
+          <span>ACTION: ${actionType}</span>
+          <span>${nowStr}</span>
+        </div>
+        <div>Bed: <strong style="color: #fff;">${bedId}</strong> | Clinician: <strong>Attending Intensivist</strong></div>
+        <div class="audit-sig">Hash: ${signature}</div>
+      `;
+      stream.prepend(card);
+    }
+
+    async function toggleMciSurge() {
+      mciSurgeActive = !mciSurgeActive;
+      const btn = document.getElementById('btn-mci-stress');
+      btn.classList.toggle('active', mciSurgeActive);
+      btn.innerHTML = mciSurgeActive 
+        ? `<span>◼</span> ACTIVE SURGE: 5 BEDS COMPROMISED` 
+        : `<span>⚠</span> TRIGGER MASS-CASUALTY SURGE (STAGE DEMO)`;
+
+      try {
+        await fetch('/api/simulation/mci_stress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active: mciSurgeActive })
+        });
+      } catch (err) {}
+    }
+
+    function syncDoctor() {
+      const savedUser = localStorage.getItem('biopulse_user');
+      const avatarEl = document.getElementById('header-avatar');
+      if (savedUser && avatarEl) {
+        try {
+          const user = JSON.parse(savedUser);
+          avatarEl.textContent = user.full_name.replace('Dr. ', '').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || "SC";
+        } catch(e) {}
+      }
+      if (avatarEl) {
+        avatarEl.onclick = () => {
+          if (confirm("Log out of current clinician enclave session?")) {
+            localStorage.removeItem('biopulse_token');
+            localStorage.removeItem('biopulse_user');
+            window.location.href = "/login";
+          }
+        };
+      }
+    }
+
+    // Connect to WebSocket stream to update Bed 04 live stats on the ticket
+    function initStream() {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const socket = new WebSocket(`${proto}//${window.location.host}/ws/telemetry`);
+      socket.onmessage = (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.type === 'TELEMETRY_BATCH') {
+            const b4 = payload.data.find(d => d.bed_id === 'BED-04');
+            if (b4) {
+              const map = Math.round((b4.vitals.sbp + 2 * (b4.vitals.dbp || 54)) / 3);
+              const hrEl = document.getElementById('t-b4-hr');
+              const mapEl = document.getElementById('t-b4-map');
+              const spo2El = document.getElementById('t-b4-spo2');
+              const siEl = document.getElementById('t-b4-si');
+              if (hrEl) hrEl.textContent = b4.vitals.hr;
+              if (mapEl) mapEl.textContent = map;
+              if (spo2El) spo2El.textContent = b4.vitals.spo2;
+              if (siEl) siEl.textContent = (b4.vitals.hr / Math.max(b4.vitals.sbp, 1)).toFixed(2);
+            }
+          }
+        } catch(err) {}
+      };
+      socket.onclose = () => setTimeout(initStream, 2000);
+    }
+
+    syncDoctor();
+    initStream();
+  </script>
+</body>
+</html>

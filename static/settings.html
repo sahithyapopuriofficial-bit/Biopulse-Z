@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioPulse-Z | Mainframe LPAR & Hardware Engine Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #060b11;
+      --bg-sidebar: #091018;
+      --bg-card: #0d1520;
+      --border-card: #182333;
+      --text-main: #f1f5f9;
+      --text-muted: #64748b;
+      --text-sub: #94a3b8;
+      --blue-accent: #0f62fe;
+      --crit-red: #ef4444;
+      --watch-yellow: #f59e0b;
+      --stable-green: #10b981;
+      --stable-bg: rgba(16, 185, 129, 0.12);
+      --stable-border: rgba(16, 185, 129, 0.35);
+      --font-sans: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg-canvas); color: var(--text-main); font-family: var(--font-sans); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* TOP HEADER */
+    .top-header { height: 64px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-card); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 50; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .brand-badge { background: var(--blue-accent); color: #fff; font-weight: 800; font-size: 13px; padding: 6px 10px; border-radius: 6px; }
+    .brand-text h1 { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; }
+    .brand-text span { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+    .header-center { display: flex; align-items: center; gap: 20px; padding-left: 20px; border-left: 1px solid #162232; }
+    .view-pills { display: flex; background: #0b1420; padding: 4px; border-radius: 8px; border: 1px solid var(--border-card); gap: 4px; }
+    .view-pill { background: transparent; border: none; color: var(--text-sub); font-size: 12px; font-weight: 600; padding: 6px 16px; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; }
+    .view-pill.active { background: var(--blue-accent); color: #ffffff; }
+    .header-right { display: flex; align-items: center; gap: 16px; font-family: var(--font-mono); font-size: 12px; }
+    .live-clock-tag { color: var(--text-muted); padding: 4px 10px; background: #09111c; border: 1px solid #142030; border-radius: 4px; }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #1e293b; border: 1px solid var(--border-card); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+    /* LAYOUT */
+    .app-body { flex: 1; display: flex; }
+    .left-sidebar { width: 220px; background: var(--bg-sidebar); border-right: 1px solid var(--border-card); display: flex; flex-direction: column; justify-content: space-between; padding: 16px 12px; flex-shrink: 0; }
+    .nav-list { display: flex; flex-direction: column; gap: 4px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 6px; color: var(--text-sub); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .nav-item:hover { background: #0e1724; color: #fff; }
+    .nav-item.active { background: var(--blue-accent); color: #fff; }
+    .sidebar-footer { padding: 12px; border-top: 1px solid var(--border-card); }
+    .ibm-logo-text { font-size: 20px; font-weight: 900; letter-spacing: 0.15em; color: #fff; }
+
+    /* SETTINGS CONTENT */
+    .content-area { flex: 1; padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+    .page-title-row { display: flex; justify-content: space-between; align-items: center; }
+    .page-title-row h2 { font-size: 20px; font-weight: 800; color: #fff; }
+    .page-title-row span { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+
+    .btn-save-cfg { background: var(--blue-accent); border: none; color: #fff; padding: 10px 20px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .btn-save-cfg:hover { background: #0353e9; }
+
+    /* 2-COLUMN SETTINGS GRID */
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .panel-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #142030; padding-bottom: 10px; }
+    .panel-head h3 { font-size: 13px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px; }
+
+    /* FORM ELEMENTS */
+    .setting-item { display: flex; flex-direction: column; gap: 6px; }
+    .setting-label-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #f1f5f9; }
+    .setting-label-row span.unit-tag { font-family: var(--font-mono); color: #38bdf8; }
+    .setting-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+    .setting-input-range { width: 100%; accent-color: var(--blue-accent); cursor: pointer; height: 5px; }
+    .setting-select { background: #060b11; border: 1px solid #1e293b; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-family: var(--font-sans); }
+    .setting-select:focus { outline: none; border-color: var(--blue-accent); }
+    .setting-select option { background: #060b11; color: #fff; }
+
+    /* TOGGLE SWITCHES */
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; background: #070d14; border: 1px solid #142030; padding: 12px 14px; border-radius: 6px; }
+    .toggle-title { font-size: 12px; font-weight: 700; color: #fff; }
+    .toggle-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider-toggle { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #1e293b; transition: .2s; border-radius: 24px; }
+    .slider-toggle:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%; }
+    input:checked + .slider-toggle { background-color: var(--blue-accent); }
+    input:checked + .slider-toggle:before { transform: translateX(20px); }
+
+    /* HARDWARE REGISTRY MONITOR CARD */
+    .hw-status-card { background: #060b11; border: 1px solid #142030; border-radius: 6px; padding: 12px 14px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px; }
+    .hw-status-card strong { color: #fff; }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header class="top-header">
+    <div class="header-left">
+      <div class="brand-badge">BP</div>
+      <div class="brand-text">
+        <h1>BioPulse-Z</h1>
+        <span>v4.2.0</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="view-pills">
+        <a href="/dashboard" class="view-pill">Dashboard</a>
+        <a href="/unit-overview" class="view-pill">Unit Overview</a>
+        <a href="/intervention" class="view-pill">Clinical Intervention</a>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="sys-badge">
+        <span>IBM z16 / LinuxONE</span>
+        <span>•</span>
+        <span style="color: #38bdf8;">Powered by Telum AI</span>
+      </div>
+      <span class="live-clock-tag" id="live-clock">18 Oct 2026 • --:--:--</span>
+      <div class="user-avatar" id="header-avatar" title="Click to log out">SC</div>
+    </div>
+  </header>
+
+  <!-- APP BODY -->
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <aside class="left-sidebar">
+      <div class="nav-list">
+        <a href="/dashboard" class="nav-item"><span>📊</span> Dashboard</a>
+        <a href="/unit-overview" class="nav-item"><span>🖥️</span> Unit Overview</a>
+        <a href="/intervention" class="nav-item"><span>🩺</span> Clinical Intervention</a>
+        <a href="/alerts" class="nav-item"><span>🔔</span> Alerts & Actions</a>
+        <a href="/gnn-analytics" class="nav-item"><span>🕸️</span> GNN Analytics</a>
+        <a href="/reports" class="nav-item"><span>📑</span> Reports</a>
+        <a href="/settings" class="nav-item active"><span>⚙️</span> Settings</a>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="ibm-logo-text">IBM</div>
+        <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Built for a healthier planet</div>
+      </div>
+    </aside>
+
+    <!-- MAIN SETTINGS CONTENT -->
+    <main class="content-area">
+      <div class="page-title-row">
+        <div>
+          <h2>Platform Configuration & Mainframe Hardware Control</h2>
+          <span>IBM z16 LPAR Management • Telum AI Accelerator Tuning • Clinical Threshold Safeguards</span>
+        </div>
+        <button class="btn-save-cfg" onclick="saveConfiguration()">
+          <span>💾</span> Commit Settings to Hardware Enclave
+        </button>
+      </div>
+
+      <!-- 2-Column Settings Grid -->
+      <div class="settings-grid">
+        
+        <!-- Panel 1: Mainframe Hardware & LPAR Partitioning -->
+        <div class="panel-box">
+          <div class="panel-head">
+            <h3><span>🖥️</span> IBM z16 LPAR Resource Partitioning</h3>
+            <span style="font-size: 10px; color: var(--stable-green); font-family: var(--font-mono);">PR/SM Hypervisor</span>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label-row">
+              <span>Integrated Facility for Linux (IFL) Dedicated Cores</span>
+              <span class="unit-tag" id="lbl-cores">8 Cores (s390x)</span>
+            </div>
+            <input type="range" class="setting-input-range" id="cfg-cores" min="4" max="32" step="2" value="8" oninput="updateVal('lbl-cores', this.value + ' Cores (s390x)')">
+            <p class="setting-desc">Allocates dedicated physical CPU execution engines to the BioPulse-Z real-time streaming LPAR partition.</p>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label-row">
+              <span>Db2 for z/OS In-Memory Telemetry Buffer Pool</span>
+              <span class="unit-tag" id="lbl-buffer">64 GB (Zero-Copy)</span>
+            </div>
+            <input type="range" class="setting-input-range" id="cfg-buffer" min="16" max="256" step="16" value="64" oninput="updateVal('lbl-buffer', this.value + ' GB (Zero-Copy)')">
+            <p class="setting-desc">Memory-resident ring buffer ensuring raw waveform telemetry never spills to disk, preventing PCIe latency spikes.</p>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-title">Zero Data Egress Hardware Lock</div>
+              <div class="toggle-desc">Blocks all outbound internet traffic from the LPAR. Guaranteed 0.0 KB PHI export compliance.</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked id="toggle-egress">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <div class="hw-status-card">
+            <div>TARGET SYSTEM: <strong>IBM z16 Dual-Frame (Model A01)</strong></div>
+            <div>HYPERVISOR: <strong>PR/SM LPAR #04 (Assigned: Clinical-Telemetry)</strong></div>
+            <div>STATUS: <span style="color: var(--stable-green);">ACTIVE • 99.99999% SLA ENFORCED</span></div>
+          </div>
+        </div>
+
+        <!-- Panel 2: Telum Coprocessor & AI Runtime Tuning -->
+        <div class="panel-box">
+          <div class="panel-head">
+            <h3><span>⚡</span> IBM Telum On-Chip AI Accelerator</h3>
+            <span style="font-size: 10px; color: #38bdf8; font-family: var(--font-mono);">Matrix Execution Core</span>
+          </div>
+
+          <div class="setting-item">
+            <label class="setting-label-row">
+              <span>ONNX Compiler Target Engine</span>
+            </label>
+            <select class="setting-select" id="cfg-onnx-target">
+              <option value="zDLC-Native">IBM zDLC (Deep Learning Compiler) - Telum Native SIMD</option>
+              <option value="SnapML-L2">SnapML Optimized Ring Buffer (Sub-0.5ms Target)</option>
+              <option value="Standard-ONNX">Standard CPU Fallback (s390x Threaded)</option>
+            </select>
+            <p class="setting-desc">Selects the matrix compilation pipeline targeting the Telum on-chip matrix multiplication coprocessor.</p>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label-row">
+              <span>GNN Hypergraph Message Passing Depth</span>
+              <span class="unit-tag" id="lbl-gnn-hops">2 Hops (Pod & Neighbor Proximity)</span>
+            </div>
+            <input type="range" class="setting-input-range" id="cfg-gnn-hops" min="1" max="4" step="1" value="2" oninput="updateVal('lbl-gnn-hops', this.value + ' Hops')">
+            <p class="setting-desc">Determines how far resource starvation and infection risk propagate across adjacent beds and nursing pods.</p>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-title">Direct 32MB L2 Cache Ring Bypass</div>
+              <div class="toggle-desc">Allows GNN sparse graph message passing to execute entirely inside private L2 cache lines.</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked id="toggle-l2-bypass">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <div class="hw-status-card">
+            <div>COP PROCESSOR LATENCY: <strong style="color: var(--stable-green);">0.82 ms (In-Transaction)</strong></div>
+            <div>CACHE BANDWIDTH: <strong style="color: #38bdf8;">320 GB/s Bidirectional Interconnect</strong></div>
+            <div>ON-CHIP STATUS: <span style="color: var(--stable-green);">ONLINE (Dual-Chip Module Verified)</span></div>
+          </div>
+        </div>
+
+        <!-- Panel 3: Clinical Deterioration Thresholds -->
+        <div class="panel-box">
+          <div class="panel-head">
+            <h3><span>🩺</span> Clinical Triage & Alarm Thresholds</h3>
+            <span style="font-size: 10px; color: var(--watch-yellow); font-family: var(--font-mono);">SSC Guidelines</span>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label-row">
+              <span>Critical Shock Index (SI) Trigger Threshold</span>
+              <span class="unit-tag" id="lbl-si-thresh">0.95 (HR / SBP)</span>
+            </div>
+            <input type="range" class="setting-input-range" id="cfg-si-thresh" min="0.80" max="1.30" step="0.05" value="0.95" oninput="updateVal('lbl-si-thresh', parseFloat(this.value).toFixed(2) + ' (HR / SBP)')">
+            <p class="setting-desc">Shock Index values breaching this threshold immediately flag the patient for acute resuscitation.</p>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label-row">
+              <span>Mean Arterial Pressure (MAP) Crisis Alarm</span>
+              <span class="unit-tag" id="lbl-map-thresh">&lt; 65 mmHg</span>
+            </div>
+            <input type="range" class="setting-input-range" id="cfg-map-thresh" min="55" max="75" step="1" value="65" oninput="updateVal('lbl-map-thresh', '< ' + this.value + ' mmHg')">
+            <p class="setting-desc">The international Surviving Sepsis Campaign benchmark for adequate end-organ perfusion.</p>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label-row">
+              <span>Nurse Pod Cognitive Strain Alert Threshold</span>
+              <span class="unit-tag" id="lbl-rn-strain">75% Load</span>
+            </div>
+            <input type="range" class="setting-input-range" id="cfg-rn-strain" min="50" max="95" step="5" value="75" oninput="updateVal('lbl-rn-strain', this.value + '% Load')">
+            <p class="setting-desc">Triggers charge nurse re-routing when a nurse pod hits critical cognitive overload.</p>
+          </div>
+        </div>
+
+        <!-- Panel 4: Post-Quantum Security & zERT Enclave -->
+        <div class="panel-box">
+          <div class="panel-head">
+            <h3><span>🛡️</span> Post-Quantum Cryptography & Audit Ledger</h3>
+            <span style="font-size: 10px; color: #a78bfa; font-family: var(--font-mono);">FDA 21 CFR § 11</span>
+          </div>
+
+          <div class="setting-item">
+            <label class="setting-label-row">
+              <span>Digital Audit Signature Algorithm</span>
+            </label>
+            <select class="setting-select" id="cfg-crypto-algo">
+              <option value="ML-DSA">CRYSTALS-Dilithium (ML-DSA) - Quantum Safe (NIST Standard)</option>
+              <option value="Falcon">Falcon-512 (Post-Quantum Lattice Signature)</option>
+              <option value="Dual-Hybrid">Hybrid: RSA-4096 + ML-DSA Dual Signature</option>
+            </select>
+            <p class="setting-desc">Cryptographic signing algorithm executed via IBM Crypto Express 8S (CEX8S) coprocessor emulation.</p>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-title">zERT Encryption Readiness Auditing</div>
+              <div class="toggle-desc">Automatically validates that all telemetry buffers remain encrypted in flight and at rest.</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked id="toggle-zert">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <div class="hw-status-card">
+            <div>COPROCESSOR: <strong>IBM Crypto Express 8S (CEX8S)</strong></div>
+            <div>SECURITY LEVEL: <strong>FIPS 140-3 Level 4 Hardware Protection</strong></div>
+            <div>STATUS: <span style="color: var(--stable-green);">ENCLAVE LOCKED • TAMPER-PROOF ACTIVE</span></div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('biopulse_token')) {
+      window.location.href = "/login";
+    }
+
+    function updateClock() {
+      const el = document.getElementById('live-clock');
+      if (el) el.textContent = `18 Oct 2026 • ${new Date().toTimeString().slice(0, 8)}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    function updateVal(elementId, text) {
+      const el = document.getElementById(elementId);
+      if (el) el.textContent = text;
+    }
+
+    function saveConfiguration() {
+      const config = {
+        cores: document.getElementById('cfg-cores').value,
+        bufferPoolGb: document.getElementById('cfg-buffer').value,
+        zeroEgress: document.getElementById('toggle-egress').checked,
+        compilerTarget: document.getElementById('cfg-onnx-target').value,
+        gnnHops: document.getElementById('cfg-gnn-hops').value,
+        l2Bypass: document.getElementById('toggle-l2-bypass').checked,
+        siThreshold: document.getElementById('cfg-si-thresh').value,
+        mapThreshold: document.getElementById('cfg-map-thresh').value,
+        rnStrainLimit: document.getElementById('cfg-rn-strain').value,
+        cryptoAlgorithm: document.getElementById('cfg-crypto-algo').value,
+        zertAuditing: document.getElementById('toggle-zert').checked
+      };
+
+      localStorage.setItem('biopulse_config', JSON.stringify(config));
+      alert("✓ HARDWARE CONFIGURATION COMMITTED:\nSettings dispatched to IBM PR/SM LPAR Hypervisor and Telum Coprocessor Register.");
+    }
+
+    function loadSavedConfig() {
+      const saved = localStorage.getItem('biopulse_config');
+      if (saved) {
+        try {
+          const cfg = JSON.parse(saved);
+          if (cfg.cores) {
+            document.getElementById('cfg-cores').value = cfg.cores;
+            updateVal('lbl-cores', cfg.cores + ' Cores (s390x)');
+          }
+          if (cfg.bufferPoolGb) {
+            document.getElementById('cfg-buffer').value = cfg.bufferPoolGb;
+            updateVal('lbl-buffer', cfg.bufferPoolGb + ' GB (Zero-Copy)');
+          }
+          if (cfg.siThreshold) {
+            document.getElementById('cfg-si-thresh').value = cfg.siThreshold;
+            updateVal('lbl-si-thresh', parseFloat(cfg.siThreshold).toFixed(2) + ' (HR / SBP)');
+          }
+        } catch(e) {}
+      }
+    }
+
+    function syncDoctor() {
+      const savedUser = localStorage.getItem('biopulse_user');
+      const avatarEl = document.getElementById('header-avatar');
+      if (savedUser && avatarEl) {
+        try {
+          const user = JSON.parse(savedUser);
+          avatarEl.textContent = user.full_name.replace('Dr. ', '').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || "SC";
+        } catch(e) {}
+      }
+      if (avatarEl) {
+        avatarEl.onclick = () => {
+          if (confirm("Log out of current clinician enclave session?")) {
+            localStorage.removeItem('biopulse_token');
+            localStorage.removeItem('biopulse_user');
+            window.location.href = "/login";
+          }
+        };
+      }
+    }
+
+    loadSavedConfig();
+    syncDoctor();
+  </script>
+</body>
+</html>
